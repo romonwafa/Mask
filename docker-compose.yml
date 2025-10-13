@@ -1,0 +1,68 @@
+name: beardai
+
+services:
+  beardai-api:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    image: beardai/api:dev
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      - redis
+      # - postgres            # uncomment if you use local Postgres
+    networks: [beardai-net]
+
+  beardai-worker:
+    image: beardai/api:dev
+    restart: unless-stopped
+    env_file: .env
+    command: ["python", "worker/worker.py"]
+    volumes:
+      - ./worker:/app/worker:ro
+    depends_on:
+      - redis
+    networks: [beardai-net]
+
+  beardai-web:
+    build:
+      context: ./client
+      args:
+        VITE_API_BASE_URL: http://localhost:8000
+    image: beardai/web:dev
+    restart: unless-stopped
+    depends_on:
+      - beardai-api
+    ports:
+      - "3000:80"
+    networks: [beardai-net]
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    networks: [beardai-net]
+
+  # Optional local DB (recommended early: use managed Postgres instead)
+  # postgres:
+  #   image: postgres:16-alpine
+  #   restart: unless-stopped
+  #   environment:
+  #     POSTGRES_DB: ${POSTGRES_DB}
+  #     POSTGRES_USER: ${POSTGRES_USER}
+  #     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+  #   volumes:
+  #     - beardai-pg:/var/lib/postgresql/data
+  #   networks: [beardai-net]
+
+networks:
+  beardai-net:
+
+volumes:
+  beardai-pg:
