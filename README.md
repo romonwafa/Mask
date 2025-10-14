@@ -7,6 +7,7 @@ BeardAI is a prototype grooming assistant made up of a FastAPI back end, a worke
 - `api/` – FastAPI application, routes, and requirements.
 - `client/` – Vite + TypeScript front end that streams camera frames, tracks landmarks, and renders overlays.
 - `overlay/` – Shared beard style manifest and utilities.
+- `overlay/assets/textures/` – Transparent PNG beards referenced in the manifest; exposed at `/static/...` by the API.
 - `tests/` – Pytest suite covering API routing and style helpers.
 - `worker/` – Lightweight background heartbeat process.
 - `docker-compose.yml` – Orchestrates API, worker, Redis, and the web container.
@@ -62,7 +63,7 @@ docker compose up -d beardai-web
 
 ## Next Steps
 
-- Replace the placeholder beard mesh with textured assets.
+- Expand the texture catalog (`overlay/assets/textures/`) and wire new files into `overlay/assets/beard_styles.json` via the `texture` field.
 - Optionally offload landmark detection to the GPU worker and stream overlays back via WebRTC.
 - Expand the manifest (`overlay/assets/beard_styles.json`) with more templates and metadata for trimming recommendations.
 

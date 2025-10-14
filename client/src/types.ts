@@ -8,6 +8,7 @@ export interface BeardStyle {
   mouth_clearance_ratio: number;
   jaw_width_scale: number;
   upper_trim_ratio: number;
+  texture: string | null;
 }
 
 export interface ApiStylesResponse {

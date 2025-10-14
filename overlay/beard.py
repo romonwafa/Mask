@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable
+from typing import Iterable, Optional
 
 
 ASSETS_ROOT = Path(__file__).resolve().parent / "assets"
@@ -23,6 +23,7 @@ class BeardStyle:
     mouth_clearance_ratio: float
     jaw_width_scale: float
     upper_trim_ratio: float
+    texture: Optional[str]
 
     def to_public_dict(self) -> dict[str, str | float]:
         return {
@@ -35,6 +36,7 @@ class BeardStyle:
             "mouth_clearance_ratio": self.mouth_clearance_ratio,
             "jaw_width_scale": self.jaw_width_scale,
             "upper_trim_ratio": self.upper_trim_ratio,
+            "texture": f"/static/{self.texture}" if self.texture else None,
         }
 
 
@@ -53,6 +55,25 @@ def load_beard_styles(manifest_path: Path | None = None) -> dict[str, BeardStyle
     raw_styles = json.loads(target.read_text("utf-8"))
     styles: dict[str, BeardStyle] = {}
     for entry in raw_styles:
+        texture = entry.get("texture")
+        normalized_texture: Optional[str]
+        if texture:
+            texture_path = Path(texture)
+            if texture_path.is_absolute():
+                try:
+                    texture_path = texture_path.relative_to(ASSETS_ROOT)
+                except ValueError as exc:
+                    raise ValueError(
+                        f"Texture path '{texture}' must reside under {ASSETS_ROOT}."
+                    ) from exc
+            normalized_texture = texture_path.as_posix()
+            if not (ASSETS_ROOT / normalized_texture).exists():
+                raise FileNotFoundError(
+                    f"Texture file '{normalized_texture}' cannot be found in assets."
+                )
+        else:
+            normalized_texture = None
+
         style = BeardStyle(
             id=entry["id"],
             name=entry["name"],
@@ -63,6 +84,7 @@ def load_beard_styles(manifest_path: Path | None = None) -> dict[str, BeardStyle
             mouth_clearance_ratio=float(entry["mouth_clearance_ratio"]),
             jaw_width_scale=float(entry["jaw_width_scale"]),
             upper_trim_ratio=float(entry["upper_trim_ratio"]),
+            texture=normalized_texture,
         )
         styles[style.id] = style
     return styles

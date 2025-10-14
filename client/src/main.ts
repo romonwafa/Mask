@@ -140,6 +140,7 @@ async function bootstrap(): Promise<void> {
 
     setupStyleSelector(stylesEl, styles, (style) => {
       selectedStyle = style;
+      console.log("Selected style", style.id, style.texture);
       setStatus(
         latestLandmarks
           ? `Tracking active – ${style.name}`
@@ -153,6 +154,9 @@ async function bootstrap(): Promise<void> {
     await initCamera(video);
 
     overlay = new OverlayRenderer(canvas);
+    // expose for debugging
+    // @ts-expect-error debug
+    window.__beardOverlay = overlay;
     const initialRect = video.getBoundingClientRect();
     overlay.resize(
       initialRect.width,

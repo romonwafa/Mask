@@ -4,11 +4,12 @@
     "name": "Classic Full Beard",
     "description": "Full-coverage beard with soft edges and medium density.",
     "color": "#5e4530",
-    "opacity": 0.68,
-    "chin_extension_ratio": 0.14,
+    "opacity": 0.95,
+    "chin_extension_ratio": 0.10,
     "mouth_clearance_ratio": 0.08,
-    "jaw_width_scale": 1.05,
-    "upper_trim_ratio": 0.28
+    "jaw_width_scale": 1.25,
+    "upper_trim_ratio": 0.02,
+    "texture": "textures/full_lumberjack_rgba_512.png"
   },
   {
     "id": "stubble_soft",

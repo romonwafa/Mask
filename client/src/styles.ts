@@ -51,6 +51,12 @@ export async function fetchStyles(forceRefresh = false): Promise<BeardStyle[]> {
     throw new Error(`Failed to load beard styles (${response.status}).`);
   }
   const payload = (await response.json()) as ApiStylesResponse;
-  writeCache(payload.styles);
-  return payload.styles;
+  const normalized = payload.styles.map((style) => ({
+    ...style,
+    texture: style.texture
+      ? new URL(style.texture, API_BASE_URL).toString()
+      : null,
+  }));
+  writeCache(normalized);
+  return normalized;
 }

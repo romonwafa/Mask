@@ -26,6 +26,9 @@ export class OverlayRenderer {
   private readonly camera: THREE.OrthographicCamera;
   private readonly beardMesh: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>;
   private readonly landmarkPoints: THREE.Points<THREE.BufferGeometry, THREE.PointsMaterial>;
+  private readonly textureLoader: THREE.TextureLoader;
+  private readonly textureCache = new Map<string, THREE.Texture>();
+  private readonly pendingTextures = new Map<string, Promise<THREE.Texture>>();
   private width = 1280;
   private height = 720;
   private frameWidth = 1280;
@@ -49,15 +52,20 @@ export class OverlayRenderer {
     this.camera = new THREE.OrthographicCamera(0, this.width, this.height, 0, -10, 10);
     this.camera.position.z = 5;
 
+    this.textureLoader = new THREE.TextureLoader();
+
     const geometry = new THREE.PlaneGeometry(1, 1);
     const material = new THREE.MeshBasicMaterial({
       color: 0xffffff,
       transparent: true,
       opacity: 0,
       depthTest: false,
+      depthWrite: false,
+      side: THREE.DoubleSide,
     });
     this.beardMesh = new THREE.Mesh(geometry, material);
     this.beardMesh.visible = false;
+    this.beardMesh.renderOrder = 5;
     this.scene.add(this.beardMesh);
 
     const landmarkGeometry = new THREE.BufferGeometry();
@@ -76,9 +84,28 @@ export class OverlayRenderer {
     });
     this.landmarkPoints = new THREE.Points(landmarkGeometry, landmarkMaterial);
     this.landmarkPoints.visible = false;
+    this.landmarkPoints.renderOrder = 10;
     this.scene.add(this.landmarkPoints);
 
     this.resize(this.width, this.height, this.frameWidth, this.frameHeight);
+  }
+
+  debugState(): Record<string, unknown> {
+    return {
+      width: this.width,
+      height: this.height,
+      renderWidth: this.renderWidth,
+      renderHeight: this.renderHeight,
+      offsetX: this.offsetX,
+      offsetY: this.offsetY,
+      meshVisible: this.beardMesh.visible,
+      meshPosition: this.beardMesh.position.clone(),
+      meshScale: this.beardMesh.scale.clone(),
+      meshRotation: this.beardMesh.rotation.z,
+      meshOpacity: this.beardMesh.material.opacity,
+      hasTexture: Boolean(this.beardMesh.material.map),
+      textureSrc: this.beardMesh.material.map?.image?.src ?? null,
+    };
   }
 
   resize(
@@ -160,25 +187,7 @@ export class OverlayRenderer {
       return;
     }
 
-    const positions = this.landmarkPoints.geometry.getAttribute(
-      "position",
-    ) as THREE.BufferAttribute;
-    const total = Math.min(landmarks.length, positions.count);
-    for (let i = 0; i < total; i += 1) {
-      const mapped = this.mapPoint(landmarks[i]);
-      const base = i * 3;
-      positions.array[base] = mapped.x;
-      positions.array[base + 1] = mapped.y;
-      positions.array[base + 2] = 0;
-    }
-    for (let i = total; i < positions.count; i += 1) {
-      const base = i * 3;
-      positions.array[base] = this.offsetX;
-      positions.array[base + 1] = this.offsetY;
-      positions.array[base + 2] = 0;
-    }
-    positions.needsUpdate = true;
-    this.landmarkPoints.visible = total > 0;
+    this.landmarkPoints.visible = false;
 
     const left = this.mapPoint(landmarks[LANDMARK_INDICES.leftJaw]);
     const right = this.mapPoint(landmarks[LANDMARK_INDICES.rightJaw]);
@@ -191,7 +200,7 @@ export class OverlayRenderer {
     const mouthClearance = (lowerLip.y - upperLip.y) * style.mouth_clearance_ratio;
 
     const scaledWidth = jawWidth * style.jaw_width_scale;
-    const scaledHeight =
+    const fallbackHeight =
       baseHeight * (1 + style.chin_extension_ratio) + mouthClearance;
 
     const midJaw = left.clone().add(right).multiplyScalar(0.5);
@@ -206,14 +215,90 @@ export class OverlayRenderer {
       mouthClearance * 0.4 +
       verticalOffset;
 
+    const texture = this.getTexture(style);
+    let scaledHeight = fallbackHeight;
+    const currentTexture =
+      texture ?? (this.beardMesh.material.map as THREE.Texture | null);
+    const currentImage =
+      currentTexture &&
+      (currentTexture as THREE.Texture & {
+        image?: { width: number; height: number };
+      }).image;
+    if (currentImage && currentImage.width > 0 && currentImage.height > 0) {
+      const aspect = currentImage.height / currentImage.width;
+      const textureHeight = scaledWidth * aspect;
+      scaledHeight = Math.max(textureHeight, fallbackHeight);
+    }
+
     this.beardMesh.visible = true;
     this.beardMesh.scale.set(scaledWidth, scaledHeight, 1);
-    this.beardMesh.position.set(centerX, centerY, 0);
+    this.beardMesh.position.set(centerX, centerY + scaledHeight * 0.1, 0);
     this.beardMesh.rotation.z = rotation;
-    this.beardMesh.material.color.set(style.color);
-    this.beardMesh.material.opacity = style.opacity;
+    if (texture) {
+      if (this.beardMesh.material.map !== texture) {
+        console.log("Beard texture applied", style.id, texture.source?.data?.src ?? style.texture);
+        this.beardMesh.material.map = texture;
+        this.beardMesh.material.needsUpdate = true;
+      }
+      this.beardMesh.material.color.set(0xffffff);
+      this.beardMesh.material.opacity = Math.max(Math.min(style.opacity, 1), 0.05);
+    } else {
+      if (this.beardMesh.material.map) {
+        console.log("Beard texture cleared", style.id);
+        this.beardMesh.material.map = null;
+        this.beardMesh.material.needsUpdate = true;
+      }
+      this.beardMesh.material.color.set(style.color || 0xff0000);
+      this.beardMesh.material.opacity = Math.max(Math.min(style.opacity, 1), 0.05);
+    }
 
     this.renderer.render(this.scene, this.camera);
   }
-}
 
+  private getTexture(style: BeardStyle): THREE.Texture | null {
+    if (!style.texture) {
+      return null;
+    }
+
+    const key = style.texture;
+    const cached = this.textureCache.get(key);
+    if (cached) {
+      return cached;
+    }
+
+    if (!this.pendingTextures.has(key)) {
+      const promise = new Promise<THREE.Texture>((resolve, reject) => {
+        this.textureLoader.load(
+          key,
+          (texture) => {
+            texture.flipY = false;
+            texture.colorSpace = THREE.SRGBColorSpace;
+            texture.needsUpdate = true;
+            this.textureCache.set(key, texture);
+            this.pendingTextures.delete(key);
+            resolve(texture);
+          },
+          undefined,
+          (error) => {
+            console.error(`Failed to load texture for style ${style.id}`, error);
+            this.pendingTextures.delete(key);
+            reject(error);
+          },
+        );
+      });
+      this.pendingTextures.set(key, promise);
+      promise
+        .then((texture) => {
+          if (this.beardMesh.material.map !== texture) {
+            this.beardMesh.material.map = texture;
+            this.beardMesh.material.needsUpdate = true;
+          }
+        })
+        .catch(() => {
+          /* handled above */
+        });
+    }
+
+    return null;
+  }
+}

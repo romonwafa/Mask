@@ -8,5 +8,5 @@ router = APIRouter(prefix="/beard", tags=["beard"])
 
 
 @router.get("/styles")
-def list_beard_styles() -> dict[str, list[dict[str, str | float]]]:
+def list_beard_styles() -> dict[str, list[dict[str, str | float | None]]]:
     return {"styles": list_public_styles()}
