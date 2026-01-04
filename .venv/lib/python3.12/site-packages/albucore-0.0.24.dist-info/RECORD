@@ -1,0 +1,14 @@
+albucore-0.0.24.dist-info/INSTALLER,sha256=zuuue4knoyJ-UwPPXg8fezS7VCrXJQrAP7zeNuwvFQg,4
+albucore-0.0.24.dist-info/LICENSE,sha256=ZFt7q2eQj-af8QB3lH5kWdPgPTyyGTngjJVZLQ6eNRY,1075
+albucore-0.0.24.dist-info/METADATA,sha256=IPmGOVDIIo5Y6HxZ_aNVW190FoRcgknf4y0T_deBlv4,5301
+albucore-0.0.24.dist-info/RECORD,,
+albucore-0.0.24.dist-info/WHEEL,sha256=52BFRY2Up02UkjOa29eZOS2VxUrpPORXg1pkohGGUS8,91
+albucore-0.0.24.dist-info/top_level.txt,sha256=IcS0O8IgkfW6Jlh0jON2MsghR2jNy9y1aAZdVgKI-hc,9
+albucore/__init__.py,sha256=FPxnsvwh5eG_1eG3rgwIIbCOOmYsjFJPMqwoekxkO1k,419
+albucore/__pycache__/__init__.cpython-312.pyc,,
+albucore/__pycache__/decorators.cpython-312.pyc,,
+albucore/__pycache__/functions.cpython-312.pyc,,
+albucore/__pycache__/utils.cpython-312.pyc,,
+albucore/decorators.py,sha256=V5zn7xk_mrVnGjnbTmL9yar7vVSLGmlqrHNKqdAigAg,19450
+albucore/functions.py,sha256=2cXqswi4xKZZ3fqqIBWtVOL313vc9FDVc-SvXfkGObc,29815
+albucore/utils.py,sha256=uQoLUm6GG6b3yzafJVnNk5ZaAkUk8D2Wo7XScoADuMs,6009

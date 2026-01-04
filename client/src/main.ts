@@ -6,10 +6,11 @@ import {
 } from "@mediapipe/tasks-vision";
 import type { NormalizedLandmark } from "@mediapipe/tasks-vision";
 
-import { FACE_LANDMARKER_TASK_URL, FACE_TASKS_WASM_URL } from "./config";
-import { OverlayRenderer } from "./renderer";
-import { fetchStyles } from "./styles";
-import type { BeardStyle } from "./types";
+import {
+  FACE_LANDMARKER_TASK_URL,
+  FACE_TASKS_WASM_URL,
+} from "./config";
+import { FaceRenderer } from "./renderer";
 
 type StatusVariant = "ok" | "error" | "warn";
 
@@ -20,10 +21,14 @@ const APP_TEMPLATE = `
       <canvas id="overlay-canvas"></canvas>
     </div>
     <aside class="sidebar">
-      <h1>BeardAI Live Preview</h1>
-      <p>Pick a template to preview beard trims in real-time.</p>
+      <h1>Mask Preview</h1>
+      <p>Mirror your camera feed and toggle landmarks while fitting virtual masks.</p>
       <div id="status-banner" class="status-banner">Initializing…</div>
-      <div id="styles-list" class="styles-list"></div>
+      <div class="controls-row">
+        <button id="toggle-landmarks" class="ghost-button" type="button">
+          Hide landmarks
+        </button>
+      </div>
     </aside>
   </div>
 `;
@@ -45,52 +50,6 @@ async function initCamera(video: HTMLVideoElement): Promise<void> {
     video.onloadedmetadata = () => resolve();
   });
   await video.play();
-}
-
-function buildStyleCard(style: BeardStyle, isActive: boolean): HTMLElement {
-  const card = document.createElement("button");
-  card.type = "button";
-  card.className = `style-card${isActive ? " active" : ""}`;
-  card.dataset.styleId = style.id;
-
-  const meta = document.createElement("div");
-  meta.className = "style-meta";
-
-  const title = document.createElement("span");
-  title.textContent = style.name;
-
-  const subtitle = document.createElement("span");
-  subtitle.textContent = style.description;
-
-  meta.appendChild(title);
-  meta.appendChild(subtitle);
-
-  const swatch = document.createElement("span");
-  swatch.className = "style-swatch";
-  swatch.style.background = style.color;
-  swatch.style.opacity = style.opacity.toString();
-
-  card.appendChild(meta);
-  card.appendChild(swatch);
-  return card;
-}
-
-function setupStyleSelector(
-  container: HTMLElement,
-  styles: BeardStyle[],
-  onSelect: (style: BeardStyle) => void,
-): void {
-  container.replaceChildren();
-  styles.forEach((style, index) => {
-    const card = buildStyleCard(style, index === 0);
-    card.addEventListener("click", () => {
-      const previous = container.querySelector(".style-card.active");
-      previous?.classList.remove("active");
-      card.classList.add("active");
-      onSelect(style);
-    });
-    container.appendChild(card);
-  });
 }
 
 function createStatusController(element: HTMLElement) {
@@ -121,44 +80,39 @@ async function bootstrap(): Promise<void> {
   root.innerHTML = APP_TEMPLATE;
 
   const statusEl = root.querySelector("#status-banner") as HTMLElement;
-  const stylesEl = root.querySelector("#styles-list") as HTMLElement;
   const video = root.querySelector("#camera-feed") as HTMLVideoElement;
   const canvas = root.querySelector("#overlay-canvas") as HTMLCanvasElement;
+  const toggleLandmarksButton = root.querySelector(
+    "#toggle-landmarks",
+  ) as HTMLButtonElement;
   const setStatus = createStatusController(statusEl);
 
   try {
-    setStatus("Loading beard templates…");
-    const styles = await fetchStyles();
-    if (!styles.length) {
-      throw new Error("No beard styles available.");
-    }
-
-    let selectedStyle: BeardStyle = styles[0];
-    let overlay: OverlayRenderer | null = null;
+    let renderer: FaceRenderer | null = null;
     let latestLandmarks: NormalizedLandmark[] | undefined;
     let lastDetectionAt = 0;
+    let showLandmarks = true;
 
-    setupStyleSelector(stylesEl, styles, (style) => {
-      selectedStyle = style;
-      console.log("Selected style", style.id, style.texture);
-      setStatus(
-        latestLandmarks
-          ? `Tracking active – ${style.name}`
-          : "Position your face within the frame.",
-        latestLandmarks ? "ok" : "warn",
+    const updateToggleLabel = () => {
+      toggleLandmarksButton.textContent = showLandmarks
+        ? "Hide landmarks"
+        : "Show landmarks";
+      toggleLandmarksButton.setAttribute(
+        "aria-pressed",
+        showLandmarks ? "true" : "false",
       );
-      overlay?.updateOverlay(latestLandmarks, selectedStyle);
-    });
+    };
+    updateToggleLabel();
 
     setStatus("Requesting camera access…");
     await initCamera(video);
 
-    overlay = new OverlayRenderer(canvas);
+    renderer = new FaceRenderer(canvas);
     // expose for debugging
     // @ts-expect-error debug
-    window.__beardOverlay = overlay;
+    window.__faceRenderer = renderer;
     const initialRect = video.getBoundingClientRect();
-    overlay.resize(
+    renderer.resize(
       initialRect.width,
       initialRect.height,
       video.videoWidth,
@@ -183,7 +137,7 @@ async function bootstrap(): Promise<void> {
       },
     );
 
-    setStatus(`Tracking active – ${selectedStyle.name}`);
+    setStatus("Mask preview active – landmarks visible.");
 
     let lastVideoTime = -1;
     let lastRectWidth = 0;
@@ -191,9 +145,15 @@ async function bootstrap(): Promise<void> {
     let lastFrameWidth = video.videoWidth;
     let lastFrameHeight = video.videoHeight;
 
+    toggleLandmarksButton.addEventListener("click", () => {
+      showLandmarks = !showLandmarks;
+      updateToggleLabel();
+      renderer?.renderFrame(latestLandmarks, showLandmarks);
+    });
+
     const renderLoop = () => {
       const currentTime = performance.now();
-      if (overlay) {
+      if (renderer) {
         const rect = video.getBoundingClientRect();
         if (
           Math.abs(rect.width - lastRectWidth) > 0.5 ||
@@ -201,7 +161,7 @@ async function bootstrap(): Promise<void> {
           video.videoWidth !== lastFrameWidth ||
           video.videoHeight !== lastFrameHeight
         ) {
-          overlay.resize(
+          renderer.resize(
             rect.width,
             rect.height,
             video.videoWidth,
@@ -223,13 +183,13 @@ async function bootstrap(): Promise<void> {
             lastDetectionAt = currentTime;
           }
         }
-        overlay?.updateOverlay(latestLandmarks, selectedStyle);
+        renderer?.renderFrame(latestLandmarks, showLandmarks);
       } else {
-        overlay?.updateOverlay(undefined, selectedStyle);
+        renderer?.renderFrame(undefined, showLandmarks);
       }
 
       if (latestLandmarks) {
-        setStatus(`Tracking active – ${selectedStyle.name}`);
+        setStatus("Mask preview active – landmarks visible.");
       } else if (currentTime - lastDetectionAt > 2000) {
         setStatus("Position your face within the frame.", "warn");
       }
@@ -239,11 +199,11 @@ async function bootstrap(): Promise<void> {
 
     requestAnimationFrame(renderLoop);
     const handleResize = () => {
-      if (!overlay) {
+      if (!renderer) {
         return;
       }
       const rect = video.getBoundingClientRect();
-      overlay.resize(
+      renderer.resize(
         rect.width,
         rect.height,
         video.videoWidth,

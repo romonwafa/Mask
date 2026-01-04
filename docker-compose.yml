@@ -1,11 +1,12 @@
-name: beardai
+name: mask
 
 services:
-  beardai-api:
+  mask-api:
     build:
       context: .
       dockerfile: api/Dockerfile
-    image: beardai/api:dev
+      network: host
+    image: mask/api:dev
     restart: unless-stopped
     env_file: .env
     ports:
@@ -18,10 +19,10 @@ services:
     depends_on:
       - redis
       # - postgres            # uncomment if you use local Postgres
-    networks: [beardai-net]
+    networks: [mask-net]
 
-  beardai-worker:
-    image: beardai/api:dev
+  mask-worker:
+    image: mask/api:dev
     restart: unless-stopped
     env_file: .env
     command: ["python", "worker/worker.py"]
@@ -29,25 +30,27 @@ services:
       - ./worker:/app/worker:ro
     depends_on:
       - redis
-    networks: [beardai-net]
+    networks: [mask-net]
 
-  beardai-web:
+  mask-web:
     build:
       context: ./client
+      network: host
       args:
-        VITE_API_BASE_URL: https://dev.romonwafa.com
-    image: beardai/web:dev
+        VITE_API_BASE_URL: https://mask.romonwafa.com
+        # override above when targeting a different env
+    image: mask/web:dev
     restart: unless-stopped
     depends_on:
-      - beardai-api
+      - mask-api
     ports:
       - "3000:80"
-    networks: [beardai-net]
+    networks: [mask-net]
 
   redis:
     image: redis:7-alpine
     restart: unless-stopped
-    networks: [beardai-net]
+    networks: [mask-net]
 
   # Optional local DB (recommended early: use managed Postgres instead)
   # postgres:
@@ -58,11 +61,11 @@ services:
   #     POSTGRES_USER: ${POSTGRES_USER}
   #     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
   #   volumes:
-  #     - beardai-pg:/var/lib/postgresql/data
-  #   networks: [beardai-net]
+  #     - mask-pg:/var/lib/postgresql/data
+  #   networks: [mask-net]
 
 networks:
-  beardai-net:
+  mask-net:
 
 volumes:
-  beardai-pg:
+  mask-pg:

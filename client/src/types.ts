@@ -1,4 +1,4 @@
-export interface BeardStyle {
+export interface MaskStyle {
   id: string;
   name: string;
   description: string;
@@ -12,5 +12,5 @@ export interface BeardStyle {
 }
 
 export interface ApiStylesResponse {
-  styles: BeardStyle[];
+  styles: MaskStyle[];
 }

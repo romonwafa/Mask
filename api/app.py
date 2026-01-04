@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from config import Settings, get_settings
-from .routes.beard import router as beard_router
+from .routes.mask import router as mask_router
 
 app = FastAPI()
 
@@ -32,4 +32,4 @@ def health(settings: Settings = Depends(get_settings)) -> dict[str, str]:
     return {"status": "ok", "env": settings.env}
 
 
-app.include_router(beard_router)
+app.include_router(mask_router)

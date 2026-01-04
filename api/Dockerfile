@@ -1,10 +1,7 @@
-FROM python:3.11-slim
+# syntax=docker/dockerfile:1.4
+FROM python:3.11-bookworm
 
 WORKDIR /app
-
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends curl \
-    && rm -rf /var/lib/apt/lists/*
 
 COPY api/requirements.txt ./requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt

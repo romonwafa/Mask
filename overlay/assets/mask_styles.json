@@ -1,0 +1,36 @@
+[
+  {
+    "id": "midnight_full",
+    "name": "Midnight Full Mask",
+    "description": "Full-panel matte mask with subtle reflective highlights for stage performances.",
+    "color": "#2b2f3a",
+    "opacity": 0.95,
+    "chin_extension_ratio": 0.10,
+    "mouth_clearance_ratio": 0.08,
+    "jaw_width_scale": 1.15,
+    "upper_trim_ratio": 0.05,
+    "texture": "textures/midnight_mask_rgba.png"
+  },
+  {
+    "id": "aero_mesh",
+    "name": "Aero Mesh Mask",
+    "description": "Lightweight mesh overlay that keeps cheek coverage translucent for breathability tests.",
+    "color": "#4c6378",
+    "opacity": 0.45,
+    "chin_extension_ratio": 0.06,
+    "mouth_clearance_ratio": 0.12,
+    "jaw_width_scale": 1.02,
+    "upper_trim_ratio": 0.18
+  },
+  {
+    "id": "festival_neon",
+    "name": "Festival Neon Mask",
+    "description": "High-contrast satin finish with luminous accents along the jawline.",
+    "color": "#ff5c8d",
+    "opacity": 0.65,
+    "chin_extension_ratio": 0.12,
+    "mouth_clearance_ratio": 0.16,
+    "jaw_width_scale": 0.92,
+    "upper_trim_ratio": 0.22
+  }
+]

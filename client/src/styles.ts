@@ -1,15 +1,15 @@
 import { API_BASE_URL } from "./config";
-import type { ApiStylesResponse, BeardStyle } from "./types";
+import type { ApiStylesResponse, MaskStyle } from "./types";
 
-const CACHE_KEY = "beardai.styles";
+const CACHE_KEY = "mask.styles";
 const CACHE_TTL_MS = 5 * 60 * 1000;
 
 interface CachedStyles {
   expiresAt: number;
-  styles: BeardStyle[];
+  styles: MaskStyle[];
 }
 
-function readCache(): BeardStyle[] | null {
+function readCache(): MaskStyle[] | null {
   try {
     const item = localStorage.getItem(CACHE_KEY);
     if (!item) {
@@ -26,7 +26,7 @@ function readCache(): BeardStyle[] | null {
   }
 }
 
-function writeCache(styles: BeardStyle[]): void {
+function writeCache(styles: MaskStyle[]): void {
   try {
     const payload: CachedStyles = {
       expiresAt: Date.now() + CACHE_TTL_MS,
@@ -38,7 +38,7 @@ function writeCache(styles: BeardStyle[]): void {
   }
 }
 
-export async function fetchStyles(forceRefresh = false): Promise<BeardStyle[]> {
+export async function fetchStyles(forceRefresh = false): Promise<MaskStyle[]> {
   if (!forceRefresh) {
     const cached = readCache();
     if (cached) {
@@ -46,9 +46,9 @@ export async function fetchStyles(forceRefresh = false): Promise<BeardStyle[]> {
     }
   }
 
-  const response = await fetch(`${API_BASE_URL}/beard/styles`);
+  const response = await fetch(`${API_BASE_URL}/mask/styles`);
   if (!response.ok) {
-    throw new Error(`Failed to load beard styles (${response.status}).`);
+    throw new Error(`Failed to load mask styles (${response.status}).`);
   }
   const payload = (await response.json()) as ApiStylesResponse;
   const normalized = payload.styles.map((style) => ({

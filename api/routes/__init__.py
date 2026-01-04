@@ -1,2 +1,1 @@
-# FastAPI routers for the BeardAI service.
-
+# FastAPI routers for the Mask service.

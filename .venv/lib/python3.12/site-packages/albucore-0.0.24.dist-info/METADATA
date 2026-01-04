@@ -1,0 +1,118 @@
+Metadata-Version: 2.2
+Name: albucore
+Version: 0.0.24
+Summary: High-performance image processing functions for deep learning and computer vision.
+Author: Vladimir Iglovikov
+Maintainer: Vladimir Iglovikov
+License: MIT License
+        
+        Copyright (c) 2024 Vladimir Iglovikov
+        
+        Permission is hereby granted, free of charge, to any person obtaining a copy
+        of this software and associated documentation files (the "Software"), to deal
+        in the Software without restriction, including without limitation the rights
+        to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+        copies of the Software, and to permit persons to whom the Software is
+        furnished to do so, subject to the following conditions:
+        
+        The above copyright notice and this permission notice shall be included in all
+        copies or substantial portions of the Software.
+        
+        THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+        IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+        FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+        AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+        LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+        OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+        SOFTWARE.
+        
+Keywords: deep learning,image processing
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Intended Audience :: Developers
+Classifier: Intended Audience :: Science/Research
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 3 :: Only
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Programming Language :: Python :: 3.13
+Classifier: Topic :: Scientific/Engineering :: Artificial Intelligence
+Classifier: Topic :: Scientific/Engineering :: Image Processing
+Classifier: Topic :: Software Development :: Libraries
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Classifier: Typing :: Typed
+Requires-Python: >=3.9
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: numpy>=1.24.4
+Requires-Dist: typing-extensions>=4.9.0; python_version < "3.10"
+Requires-Dist: stringzilla>=3.10.4
+Requires-Dist: simsimd>=5.9.2
+Requires-Dist: opencv-python-headless>=4.9.0.80
+Dynamic: requires-dist
+
+# Albucore: High-Performance Image Processing Functions
+
+Albucore is a library of optimized atomic functions designed for efficient image processing. These functions serve as the foundation for [Albumentations](https://github.com/albumentations-team/albumentations), a popular image augmentation library.
+
+## Overview
+
+Image processing operations can be implemented in various ways, each with its own performance characteristics depending on the image type, size, and number of channels. Albucore aims to provide the fastest implementation for each operation by leveraging different backends such as NumPy, OpenCV, and custom optimized code.
+
+Key features:
+
+- Optimized atomic image processing functions
+- Automatic selection of the fastest implementation based on input image characteristics
+- Seamless integration with Albumentations
+- Extensive benchmarking for performance validation
+
+## Installation
+
+```bash
+pip install albucore
+```
+
+## Usage
+
+```python
+import numpy as np
+import albucore
+# Create a sample image
+image = np.random.randint(0, 256, (100, 100, 3), dtype=np.uint8)
+# Apply a function
+result = albucore.multiply(image, 1.5)
+```
+
+Albucore automatically selects the most efficient implementation based on the input image type and characteristics.
+
+## Functions
+
+Albucore includes optimized implementations for various image processing operations, including:
+
+- Arithmetic operations (add, multiply, power)
+- Normalization (per-channel, global)
+- Geometric transformations (vertical flip, horizontal flip)
+- Helper decorators (to_float, to_uint8)
+
+## Performance
+
+Albucore uses a combination of techniques to achieve high performance:
+
+1. **Multiple Implementations**: Each function may have several implementations using different backends (NumPy, OpenCV, custom code).
+2. **Automatic Selection**: The library automatically chooses the fastest implementation based on the input image type, size, and number of channels.
+3. **Optimized Algorithms**: Custom implementations are optimized for specific use cases, often outperforming general-purpose libraries.
+
+### Benchmarks
+
+We maintain an extensive benchmark suite to ensure Albucore's performance across various scenarios. You can find the benchmarks and their results in the [benchmarks](./benchmarks/README.md) directory.
+
+## License
+
+MIT
+
+## Acknowledgements
+
+Albucore is part of the [Albumentations](https://github.com/albumentations-team/albumentations) project. We'd like to thank all contributors to [Albumentations](https://albumentations.ai/) and the broader computer vision community for their inspiration and support.

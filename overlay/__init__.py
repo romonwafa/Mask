@@ -1,2 +1,1 @@
-# Tools for beard overlay generation.
-
+# Tools for mask overlay generation.
