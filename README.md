@@ -2,6 +2,12 @@
 
 Mask is a prototype overlay assistant made up of a FastAPI back end, a worker loop, and a WebGL front end. The API exposes configuration for mask styles, while the browser client runs MediaPipe Tasks Vision (FaceLandmarker JS/WASM) and Three.js to render real-time mask overlays from a webcam feed.
 
+Test out a live version here: https://mask.romonwafa.com/
+
+
+![output](https://github.com/user-attachments/assets/a66c01e9-0d6d-4457-b634-dbcadc0f7dff)
+
+
 ## Project Structure
 
 - `api/` – FastAPI application, routes, and requirements.
